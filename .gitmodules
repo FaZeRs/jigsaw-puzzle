@@ -1,0 +1,3 @@
+[submodule "modules/universal-classes"]
+	path = modules/universal-classes
+	url = https://bitbucket.org/giraffe360/universal-classes.git
