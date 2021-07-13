@@ -14,6 +14,7 @@ Currently converting this to your own repo requires removing .git folder, initin
 Steps:  
 >rm -r ./.git  
 >rm -r ./modules/universal-classes/  
+>rm ./.gitmodules  
 >git init  
 >git submodule add https://bitbucket.org/giraffe360/universal-classes.git ./modules/universal-classes/  
 
@@ -21,6 +22,7 @@ Open top-level CMakeLists.txt and change ```cpp_project_template``` to your own 
 
 Make your bitbucket git repo and follow the readme there. Something like:  
 >git remote add origin https://bitbucket.org/giraffe360/some_sort_of_repo.git  
+>git commit  
 >git push -u origin master  
 
 Now everything is set up for your own project.
