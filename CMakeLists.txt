@@ -83,7 +83,8 @@ if (TIMER_USES_DIMENSIONS)
 endif()
 
 # Add universal-classes
-include_directories(modules/universal-classes/src)
+add_subdirectory(modules/universal-classes)
+include_directories(modules/universal-classes/include/)
 
 # Add directories for compilation - this has the compilation target
 add_subdirectory(src)
