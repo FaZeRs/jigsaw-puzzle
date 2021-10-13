@@ -27,3 +27,6 @@ endif()
 
 # Link with OpenCV
 target_link_libraries(${CMAKE_PROJECT_NAME} ${OpenCV_LIBS})
+
+# Link with universal-classes
+target_link_libraries(${CMAKE_PROJECT_NAME} uc::uc)
