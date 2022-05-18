@@ -17,7 +17,7 @@ SET(COMPILE_64BIT TRUE CACHE BOOL "64bit")
 SET(TIMER_USES_DIMENSIONS TRUE CACHE BOOL "Timer uses Dimensions class")
 SET(ENABLE_PROFILE FALSE CACHE BOOL "Enable profiling flags (-pg)")
 set(SANITIZE_MEMORY "FALSE" CACHE BOOL "Enable sanitizer for memory - cannot be used with thread sanitizer")
-set(SANITIZE_THREAD "FALSE" CACHE BOOL "Enable sanitizer for thread - cannot be used with memory saniziter")
+set(SANITIZE_THREAD "FALSE" CACHE BOOL "Enable sanitizer for thread - cannot be used with memory sanitizer")
 
 if (SANITIZE_MEMORY)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined")

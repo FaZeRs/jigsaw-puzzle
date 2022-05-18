@@ -16,6 +16,7 @@ include_directories(${CMAKE_CURRENT_LIST_DIR})
 list(LENGTH FOLDER_SOURCE RES_LEN)
 if(NOT RES_LEN EQUAL 0)
   add_library(${CMAKE_PROJECT_NAME}-lib ${SOURCE})
+  target_link_libraries(${CMAKE_PROJECT_NAME}-lib uc::uc)
 endif()
 
 # Set compilation target
