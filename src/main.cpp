@@ -1,14 +1,10 @@
 #include <opencv2/opencv.hpp>
 
 #include <uc/logger.h>
-#include <uc/math_common.h>
-#include <uc/math_geometric.h>
 #include <uc/command_line.h>
-#include <uc/dimensions.h>
 #include <uc/timer.h>
 
-using namespace dimensions;
-using namespace dimensions::literals;
+#include "color.h"
 
 int main(int argc, char** argv) {
   CMDLine cmd;
@@ -22,9 +18,7 @@ int main(int argc, char** argv) {
   cv::Mat output(cmd.getDoubles("--window-size")[0], cmd.getDoubles("--window-size")[1], CV_8UC3);
   Timer timer;
   while (true) {
-    output = cv::Scalar((cos(2.0_pi_rad * 0.3_Hz * timer.elapsedS()) + 1) * 127.0,
-                        (sin(2.0_pi_rad * 0.1_Hz * timer.elapsedS()) + 1) * 127.0,
-                        (sin(2.0_pi_rad * 0.5_Hz * timer.elapsedS() + 0.5_pi_rad) + 1) * 127.0);
+    output = makeColor(timer.elapsedS());
     cv::imshow("Output", output);
 
     int key = cv::waitKey(1);
