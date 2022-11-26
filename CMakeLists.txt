@@ -76,8 +76,10 @@ endif()
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-# Required for statically compiled OpenCV
-find_package(Iconv REQUIRED)
+# Required for statically compiled OpenCV - only on Linux though
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  find_package(Iconv REQUIRED)
+endif()
 
 # Add OpenMP
 FIND_PACKAGE(OpenMP REQUIRED)
