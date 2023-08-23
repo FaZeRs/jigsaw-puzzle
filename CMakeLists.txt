@@ -8,8 +8,8 @@ cmake_policy(SET CMP0012 NEW)
 
 project(cpp_project_template)
 
-# Enable C++17
-set(CMAKE_CXX_STANDARD 17)
+# Enable C++20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options that are configurable through cmake
@@ -74,7 +74,7 @@ if(NOT OPENCV_WORLD_FOUND)
   find_package(OpenCV CONFIG REQUIRED)
 endif()
 
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 
 # Required for statically compiled OpenCV - only on Linux though
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
