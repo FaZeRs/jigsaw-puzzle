@@ -16,12 +16,12 @@ Steps:
 >rm -r ./modules/universal-classes/  
 >rm ./.gitmodules  
 >git init  
->git submodule add https://gitlab.liepaja.giraffe360.com/submodules/universal-classes.git ./modules/universal-classes/  
+>git submodule add https://gitlab.giraffe360-mimosa.com/submodules/universal-classes.git ./modules/universal-classes/  
 
 Open top-level CMakeLists.txt and change ```cpp_project_template``` to your own project name that is going to be used for binary. For example, change ```project(cpp_project_template)``` into ```project(my_project)```.
 
 Make your gitlab git repo and follow the readme there. Something like:  
->git remote add origin https://gitlab.liepaja.giraffe360.com/giraffe360/some_sort_of_repo.git  
+>git remote add origin https://gitlab.giraffe360-mimosa.com/giraffe360/some_sort_of_repo.git  
 >git commit  
 >git push -u origin master  
 
