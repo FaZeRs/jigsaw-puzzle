@@ -33,3 +33,5 @@ build/
 # Ignore Visual Studio Code cache
 .vscode/
 .devcontainer/
+
+.cache
