@@ -16,18 +16,18 @@
 
 constexpr int PUZZLE_GRID_SIZE = 16;
 constexpr int PUZZLE_SIZE = 256;
-constexpr const char* ASSETS_DIR = "assets_png";
+constexpr const char* ASSETS_DIR = "assets/assets_png";
 constexpr double FIRST_COL_WIDTH = 240.0;
 constexpr double FIRST_ROW_HEIGHT = 135.0;
 constexpr int IMAGE_WIDTH = 3840;
 constexpr int IMAGE_HEIGHT = 2160;
 constexpr size_t HASH_MAGIC_NUMBER = 0x9e379967;
 
-enum class Side { LEFT, RIGHT, TOP, BOTTOM };
+enum class Side { LEFT, TOP, RIGHT, BOTTOM };
 constexpr std::array<std::pair<int, int>, 4> offsets = {
     std::pair{-1, 0}, // Side::LEFT
-    std::pair{1, 0}, // Side::RIGHT
     std::pair{0, -1}, // Side::TOP
+    std::pair{1, 0}, // Side::RIGHT
     std::pair{0, 1} // Side::BOTTOM
 };
 
@@ -57,10 +57,7 @@ struct PuzzlePiece {
   cv::Mat image;
   int col{-1};
   int row{-1};
-  size_t left_hash;
-  size_t right_hash;
-  size_t top_hash;
-  size_t bottom_hash;
+  size_t edge_hashes[4];
 
   cv::Rect rect() const {
     const auto top_left =
@@ -89,10 +86,10 @@ void computeEdgeHashes(PuzzlePiece& piece) {
   cv::Mat gray;
   cv::cvtColor(piece.image, gray, cv::COLOR_BGR2GRAY);
 
-  piece.left_hash = computeHash(gray.col(0));
-  piece.right_hash = computeHash(gray.col(gray.cols - 1));
-  piece.top_hash = computeHash(gray.row(0));
-  piece.bottom_hash = computeHash(gray.row(gray.rows - 1));
+  piece.edge_hashes[0] = computeHash(gray.col(0));
+  piece.edge_hashes[1] = computeHash(gray.row(0));
+  piece.edge_hashes[2] = computeHash(gray.col(gray.cols - 1));
+  piece.edge_hashes[3] = computeHash(gray.row(gray.rows - 1));
 }
 
 class PuzzlePieceProcessor : public cv::ParallelLoopBody {
@@ -105,6 +102,12 @@ class PuzzlePieceProcessor : public cv::ParallelLoopBody {
       cv::Mat image = cv::imread(file_paths_[i], cv::IMREAD_COLOR);
       auto& piece = pieces_[i];
       piece.id = i;
+      if (image.cols == FIRST_COL_WIDTH) {
+        piece.col = 0;
+      }
+      if (image.rows == FIRST_ROW_HEIGHT) {
+        piece.row = 0;
+      }
       piece.image = std::move(image);
       computeEdgeHashes(piece);
     }
@@ -129,63 +132,22 @@ class PuzzlePieceProcessor : public cv::ParallelLoopBody {
   return pieces;
 }
 
-void findStartingPieces(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
+using HashMapType = std::array<std::unordered_multimap<size_t, PuzzlePiece*>, 4>;
+
+HashMapType buildHashMap(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
+  HashMapType hash_maps;
   for (auto& piece : pieces) {
-    if (piece.image.cols == FIRST_COL_WIDTH && piece.image.rows == FIRST_ROW_HEIGHT) {
-      piece.col = 0;
-      piece.row = 0;
-    } else if (piece.image.cols == FIRST_COL_WIDTH) {
-      piece.col = 0;
-    } else if (piece.image.rows == FIRST_ROW_HEIGHT) {
-      piece.row = 0;
+    for (int i = 0; i < 4; ++i) {
+      hash_maps[i].emplace(piece.edge_hashes[i], &piece);
     }
   }
-}
-
-size_t getHash(const PuzzlePiece& piece, const Side side) {
-  static constexpr std::array<size_t PuzzlePiece::*, 4> hashes = {&PuzzlePiece::left_hash, &PuzzlePiece::right_hash,
-                                                                  &PuzzlePiece::top_hash, &PuzzlePiece::bottom_hash};
-  return piece.*hashes[static_cast<int>(side)];
-}
-
-PuzzlePiece* findMatch(const PuzzlePiece& source_piece, const std::unordered_multimap<size_t, PuzzlePiece*>& hash_map,
-                       const Side side) {
-  const size_t source_hash = getHash(source_piece, side);
-  auto [matches_begin, matches_end] = hash_map.equal_range(source_hash);
-
-  for (auto it = matches_begin; it != matches_end; ++it) {
-    auto& candidate = it->second;
-
-    if (source_piece.id == candidate->id) {
-      continue;
-    }
-    if (candidate->col != -1 && candidate->row != -1) {
-      continue;
-    }
-
-    candidate->move(source_piece.col, source_piece.row, side);
-    return candidate;
-  }
-
-  return nullptr;
-}
-
-std::unordered_multimap<size_t, PuzzlePiece*> buildHashMap(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
-  std::unordered_multimap<size_t, PuzzlePiece*> hash_map;
-  hash_map.reserve(PUZZLE_SIZE * 4);
-  for (auto& piece : pieces) {
-    hash_map.emplace(piece.left_hash, &piece);
-    hash_map.emplace(piece.right_hash, &piece);
-    hash_map.emplace(piece.top_hash, &piece);
-    hash_map.emplace(piece.bottom_hash, &piece);
-  }
-  return hash_map;
+  return hash_maps;
 }
 
 void assemblePuzzle(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
   std::sort(pieces.begin(), pieces.end());
 
-  const auto hash_map = buildHashMap(pieces);
+  const auto hash_maps = buildHashMap(pieces);
 
   std::stack<PuzzlePiece*> stack;
   stack.push(&pieces[0]);
@@ -194,16 +156,19 @@ void assemblePuzzle(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
     const auto current_piece = stack.top();
     stack.pop();
 
-    if (current_piece->col < PUZZLE_GRID_SIZE) {
-      auto right_match = findMatch(*current_piece, hash_map, Side::RIGHT);
-      if (right_match && right_match->col < PUZZLE_GRID_SIZE) {
+    auto right_it = hash_maps[0].find(current_piece->edge_hashes[2]);
+    if (right_it != hash_maps[0].end()) {
+      auto right_match = right_it->second;
+      if (right_match->col == -1 || right_match->row == -1) {
+        right_match->move(current_piece->col, current_piece->row, static_cast<Side>(2));
         stack.push(right_match);
       }
     }
-
-    if (current_piece->row < PUZZLE_GRID_SIZE) {
-      auto bottom_match = findMatch(*current_piece, hash_map, Side::BOTTOM);
-      if (bottom_match && bottom_match->row < PUZZLE_GRID_SIZE) {
+    auto bottom_it = hash_maps[1].find(current_piece->edge_hashes[3]);
+    if (bottom_it != hash_maps[1].end()) {
+      auto bottom_match = bottom_it->second;
+      if (bottom_match->col == -1 || bottom_match->row == -1) {
+        bottom_match->move(current_piece->col, current_piece->row, static_cast<Side>(3));
         stack.push(bottom_match);
       }
     }
@@ -240,11 +205,6 @@ int main(int argc, char** argv) {
   std::array puzzle_pieces = loadPuzzle(assets_path);
 
   std::cout << "Load puzzle time: " << timer.elapsedMs() << "\n";
-  timer.reset();
-
-  findStartingPieces(puzzle_pieces);
-
-  std::cout << "Find starting piece time: " << timer.elapsedMs() << "\n";
   timer.reset();
 
   assemblePuzzle(puzzle_pieces);
