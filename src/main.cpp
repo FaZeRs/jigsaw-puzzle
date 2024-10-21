@@ -156,6 +156,13 @@ void assemblePuzzle(std::array<PuzzlePiece, PUZZLE_SIZE>& pieces) {
     const auto current_piece = stack.top();
     stack.pop();
 
+    if (current_piece->col != -1 && current_piece->row != -1) {
+      continue;
+    }
+    if (current_piece->col == PUZZLE_GRID_SIZE - 1 || current_piece->row == PUZZLE_GRID_SIZE - 1) {
+      continue;
+    }
+
     auto right_it = hash_maps[0].find(current_piece->edge_hashes[2]);
     if (right_it != hash_maps[0].end()) {
       auto right_match = right_it->second;
